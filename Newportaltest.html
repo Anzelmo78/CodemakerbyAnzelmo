@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoicePro Dashboard | CodemakerByAnzelmo</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg-main: #f8fafc;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --wero: #9932cc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-dark); min-height: 100vh; }
+        .hidden { display: none !important; }
+
+        /* Navigation */
+        nav { background: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .logo-text { font-weight: 800; color: var(--primary); font-size: 1.25rem; }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1.5rem; position: relative; }
+        
+        /* Progress Bar */
+        .progress-container { background: #edf2f7; border-radius: 20px; height: 12px; width: 100%; margin: 10px 0; overflow: hidden; }
+        .progress-bar { background: var(--primary); height: 100%; transition: width 0.5s; }
+
+        /* Admin Invoice Editor Layout */
+        .invoice-editor-container { display: flex; height: calc(100vh - 70px); overflow: hidden; }
+        
+        .sidebar { width: 420px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; padding: 2rem; }
+        .sidebar-header { margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: 800; }
+        
+        .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-light); margin-bottom: 1rem; display: block; letter-spacing: 1px; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem; }
+        input, select, textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+
+        .main-content { flex: 1; display: flex; justify-content: center; padding: 40px; background: #f1f5f9; overflow-y: auto; }
+
+        /* Invoice Preview Styling */
+        .invoice-paper { background: white; width: 210mm; min-height: 297mm; padding: 20mm; box-shadow: var(--shadow); position: relative; color: #000; text-align: left; }
+        .inv-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .inv-company-info { text-align: right; font-size: 0.85rem; line-height: 1.6; }
+        .inv-title-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+        .inv-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+        .inv-label { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--text-light); }
+        .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .inv-table th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); font-size: 0.75rem; color: var(--text-light); }
+        .inv-table td { padding: 12px 10px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; }
+        .inv-summary { width: 250px; margin-left: auto; }
+        .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
+        .summary-row.total { border-top: 2px solid #000; margin-top: 10px; padding-top: 10px; font-weight: 800; font-size: 1.1rem; }
+        .inv-footer { position: absolute; bottom: 20mm; left: 20mm; right: 20mm; border-top: 1px solid var(--border); padding-top: 15px; font-size: 0.75rem; }
+
+        /* Items Editor */
+        .item-row-edit { display: grid; grid-template-columns: 1fr 100px 40px; gap: 10px; margin-bottom: 10px; }
+        .btn-remove { background: #fff1f2; color: #e11d48; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-add { width: 100%; padding: 0.7rem; background: #f8fafc; border: 1px dashed var(--primary); color: var(--primary); border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 20px; }
+
+        /* Buttons */
+        .btn { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-wero { background: var(--wero); color: white; }
+        .btn-outline { border: 1px solid var(--border); background: white; }
+
+        /* Chat Popup */
+        #chat-popup { position: fixed; bottom: 80px; right: 20px; width: 320px; height: 400px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 2000; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); transform: translateY(20px); opacity: 0; pointer-events: none; transition: 0.3s; }
+        #chat-popup.active { transform: translateY(0); opacity: 1; pointer-events: all; }
+        .chat-header { background: var(--primary); color: white; padding: 12px; font-weight: 700; display: flex; justify-content: space-between; }
+        .chat-msgs { flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 8px 12px; border-radius: 12px; max-width: 85%; font-size: 0.85rem; }
+        .msg-self { align-self: flex-end; background: var(--primary); color: white; }
+        .msg-other { align-self: flex-start; background: white; border: 1px solid var(--border); }
+        .chat-trigger { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 2001; }
+        .notif-dot { position: absolute; top: 0; right: 0; width: 15px; height: 15px; background: red; border: 2px solid white; border-radius: 50%; display: none; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo-text">CodemakerByAnzelmo <span style="font-weight: 300;">| Portal</span></div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" onclick="goHome()"><i class="fas fa-home"></i> Home</button>
+        <button class="btn btn-remove hidden" id="logout-btn" onclick="logout()">Uitloggen</button>
+    </div>
+</nav>
+
+<!-- 1. STARTKEUZE -->
+<div id="view-choice" class="container" style="text-align: center; margin-top: 15vh;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Welkom</h1>
+    <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 600px; margin: 0 auto;">
+        <div class="card" style="cursor:pointer" onclick="showView('view-admin-login')"><h2>Beheerder</h2></div>
+        <div class="card" style="cursor:pointer" onclick="showView('view-client-login')"><h2>Klant</h2></div>
+    </div>
+</div>
+
+<!-- 2. LOGINS -->
+<div id="view-admin-login" class="container hidden">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h2>Beheerder</h2><br>
+        <input type="text" id="admin-user" placeholder="Gebruikersnaam"><br><br>
+        <input type="password" id="admin-pass" placeholder="Wachtwoord"><br><br>
+        <button class="btn btn-primary" style="width:100%" onclick="doAdminLogin()">Inloggen</button>
+    </div>
+</div>
+
+<div id="view-client-login" class="container hidden">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h2>Klant Login</h2><br>
+        <input type="text" id="c-user" placeholder="Gebruikersnaam"><br><br>
+        <input type="password" id="c-pass" placeholder="Wachtwoord"><br><br>
+        <button class="btn btn-primary" style="width:100%" onclick="doClientLogin()">Inloggen</button>
+    </div>
+</div>
+
+<!-- 3. ADMIN DASHBOARD -->
+<div id="view-admin-dash" class="container hidden">
+    <div class="card">
+        <h2>Klant Toevoegen</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <input type="text" id="f-company" placeholder="Bedrijfsnaam">
+            <input type="email" id="f-email" placeholder="E-mail">
+            <input type="text" id="f-user" placeholder="Loginnaam">
+            <input type="text" id="f-pass" placeholder="Tijdelijk Wachtwoord">
+        </div>
+        <button class="btn btn-primary" style="margin-top: 15px;" onclick="addClient()">Toevoegen</button>
+    </div>
+
+    <div class="card">
+        <h2>Klantenoverzicht</h2>
+        <table style="margin-top: 15px;">
+            <thead><tr><th>Bedrijf</th><th>Voortgang</th><th>Actie</th></tr></thead>
+            <tbody id="admin-table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 4. JOUW ORIGINELE FACTUUR EDITOR -->
+<div id="view-invoice-maker" class="hidden">
+    <div class="invoice-editor-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-file-invoice-dollar"></i> Factuur Opstellen
+            </div>
+            
+            <div class="form-group">
+                <label>Factuurnummer</label>
+                <input type="text" id="in-nummer" value="INV-2025-001">
+            </div>
+            <div class="form-group">
+                <label>Factuurdatum</label>
+                <input type="date" id="in-datum">
+            </div>
+            <div class="form-group">
+                <label>BTW Percentage</label>
+                <select id="in-btw-perc" onchange="InvoiceApp.syncState()">
+                    <option value="0">0%</option>
+                    <option value="9">9%</option>
+                    <option value="21" selected>21%</option>
+                </select>
+            </div>
+
+            <span class="section-title">Factuurregels</span>
+            <div id="items-container"></div>
+            <button class="btn-add" onclick="InvoiceApp.addItem()">+ Regel toevoegen</button>
+
+            <div class="form-group">
+                <label>Notitie op factuur</label>
+                <textarea id="in-notitie" rows="2">Betalingstermijn: 14 dagen. Vermeld factuurnummer bij betaling.</textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="InvoiceApp.saveAndSend()">Opslaan & Sturen</button>
+                <button class="btn btn-outline" onclick="showView('view-admin-dash')">Annuleren</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="invoice-paper" id="invoice-canvas">
+                <header class="inv-header">
+                    <div><h2 style="color:var(--primary); font-weight:800;">CodemakerByAnzelmo</h2></div>
+                    <div class="inv-company-info">
+                        <strong>CodemakerByAnzelmo</strong>
+                        info@codemakerbyanzelmo.nl<br>
+                        www.codemakerbyanzelmo.nl
+                    </div>
+                </header>
+
+                <div class="inv-title-bar">
+                    <h1 style="font-size: 2rem; font-weight:800;">FACTUUR</h1>
+                    <div style="text-align: right">
+                        <div class="inv-label">Factuurnummer</div>
+                        <div id="out-nummer" style="font-weight:600;">-</div>
+                    </div>
+                </div>
+
+                <div class="inv-details-grid">
+                    <div>
+                        <div class="inv-label">Gefactureerd aan</div>
+                        <div id="out-klant-naam" style="font-size: 1.1rem; font-weight: 700;">-</div>
+                    </div>
+                    <div style="text-align: right">
+                        <div class="inv-label">Factuurdatum</div>
+                        <div id="out-datum">-</div>
+                    </div>
+                </div>
+
+                <table class="inv-table">
+                    <thead><tr><th style="width:70%">Omschrijving</th><th style="text-align:right">Bedrag</th></tr></thead>
+                    <tbody id="out-items"></tbody>
+                </table>
+
+                <div class="inv-summary">
+                    <div class="summary-row"><span>Subtotaal</span><span id="out-subtotaal">€ 0,00</span></div>
+                    <div class="summary-row"><span id="label-btw">BTW (21%)</span><span id="out-btw">€ 0,00</span></div>
+                    <div class="summary-row total"><span>Totaalbedrag</span><span id="out-totaal">€ 0,00</span></div>
+                </div>
+
+                <footer class="inv-footer">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <strong>Betalingsinstructies</strong>
+                            <p id="out-notitie" style="font-size:0.7rem;"></p>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>Bankgegevens</strong><br>
+                            IBAN: NL70 SNSB 0944 9275 99<br>
+                            t.n.v. A.R. Busby
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 5. KLANT PORTAL -->
+<div id="view-client-dash" class="container hidden">
+    <div class="card" style="text-align:center">
+        <h1 id="c-display-company">Welkom</h1>
+        <div style="max-width:500px; margin: 15px auto; text-align:left">
+            <label><b>Website Voortgang:</b> <span id="c-progress-text">0</span>%</label>
+            <div class="progress-container"><div id="c-progress-bar" class="progress-bar" style="width: 0%"></div></div>
+            <p id="c-status-msg" style="font-size:0.8rem; color:gray;"></p>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 350px; gap:20px">
+        <div class="card">
+            <h3>Facturen</h3>
+            <div id="c-invoice-list" style="margin-top:15px"></div>
+        </div>
+        <div class="card">
+            <h3>Wachtwoord</h3>
+            <input type="password" id="new-pass" placeholder="Nieuw wachtwoord" style="margin-top:10px">
+            <button class="btn btn-primary" style="width:100%; margin-top:10px" onclick="changePassword()">Opslaan</button>
+        </div>
+    </div>
+</div>
+
+<!-- CHAT POPUP -->
+<div class="chat-trigger" onclick="toggleChat()"><i class="fas fa-comments"></i><div class="notif-dot" id="chat-notif"></div></div>
+<div id="chat-popup">
+    <div class="chat-header"><span id="chat-title">Chat</span><i class="fas fa-times" onclick="toggleChat()" style="cursor:pointer"></i></div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div style="padding:10px; display:flex; gap:5px; border-top:1px solid #eee">
+        <input type="text" id="chat-input" placeholder="Bericht...">
+        <button class="btn btn-primary" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
+    // --- APP STATE ---
+    let clients = JSON.parse(localStorage.getItem('anzelmo_db_v7')) || [];
+    let currentSession = JSON.parse(localStorage.getItem('anzelmo_session')) || null;
+    let activeClientId = null;
+
+    // --- INIT ---
+    window.onload = () => {
+        if(currentSession) {
+            if(currentSession.type === 'admin') { renderAdminTable(); showView('view-admin-dash'); }
+            else { const c = clients.find(cl => cl.id === currentSession.clientId); activeClientId = c.id; renderClientPortal(); showView('view-client-dash'); }
+        }
+    };
+
+    function save() { localStorage.setItem('anzelmo_db_v7', JSON.stringify(clients)); }
+    function showView(id) {
+        document.querySelectorAll('.container, #view-invoice-maker').forEach(v => v.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('logout-btn').classList.toggle('hidden', id.includes('choice') || id.includes('login'));
+    }
+    function logout() { localStorage.removeItem('anzelmo_session'); location.reload(); }
+    function goHome() { if(!currentSession) showView('view-choice'); else currentSession.type==='admin' ? showView('view-admin-dash') : showView('view-client-dash'); }
+
+    // --- ADMIN ---
+    function doAdminLogin() {
+        if(document.getElementById('admin-user').value==='admin' && document.getElementById('admin-pass').value==='admin123') {
+            currentSession = {type:'admin'}; localStorage.setItem('anzelmo_session', JSON.stringify(currentSession));
+            renderAdminTable(); showView('view-admin-dash');
+        } else alert('Onjuist');
+    }
+
+    function addClient() {
+        const company = document.getElementById('f-company').value;
+        const email = document.getElementById('f-email').value;
+        const user = document.getElementById('f-user').value;
+        const pass = document.getElementById('f-pass').value;
+        if(!company || !user) return;
+        clients.push({ id:Date.now(), company, email, user, pass, progress:10, status:'Project gestart', invoices:[], messages:[], unreadByAdmin:false });
+        save(); renderAdminTable();
+    }
+
+    function renderAdminTable() {
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '';
+        clients.forEach(c => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${c.company}</b><br><small>${c.email}</small></td>
+                    <td>
+                        <input type="range" min="0" max="100" value="${c.progress}" onchange="updateProgress(${c.id}, this.value)"> ${c.progress}%<br>
+                        <input type="text" value="${c.status}" style="font-size:0.7rem; height:25px" onchange="updateStatus(${c.id}, this.value)">
+                    </td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="openInvoiceMaker(${c.id})"><i class="fas fa-plus"></i> Factuur</button>
+                        <button class="btn btn-outline btn-sm" onclick="openAdminChat(${c.id})"><i class="fas fa-comment"></i> ${c.unreadByAdmin?'!':''}</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function updateProgress(id, v) { clients.find(c=>c.id===id).progress=v; save(); }
+    function updateStatus(id, v) { clients.find(c=>c.id===id).status=v; save(); }
+
+    // --- JOUW FACTUUR LOGIC ---
+    const InvoiceApp = {
+        state: { items: [{ desc: 'Webontwikkeling services', price: 1250 }] },
+        
+        open(id) {
+            activeClientId = id;
+            const c = clients.find(cl => cl.id === id);
+            document.getElementById('out-klant-naam').innerText = c.company;
+            document.getElementById('in-datum').value = new Date().toISOString().split('T')[0];
+            this.render();
+            showView('view-invoice-maker');
+        },
+
+        addItem() { this.state.items.push({ desc: '', price: 0 }); this.render(); },
+        updateItem(i, f, v) { this.state.items[i][f] = v; this.render(); },
+        removeItem(i) { this.state.items.splice(i, 1); this.render(); },
+        syncState() { this.render(); },
+
+        render() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            this.state.items.forEach((item, i) => {
+                container.innerHTML += `
+                    <div class="item-row-edit">
+                        <input type="text" value="${item.desc}" oninput="InvoiceApp.updateItem(${i}, 'desc', this.value)">
+                        <input type="number" value="${item.price}" oninput="InvoiceApp.updateItem(${i}, 'price', parseFloat(this.value)||0)">
+                        <button class="btn-remove" onclick="InvoiceApp.removeItem(${i})">×</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('out-nummer').innerText = document.getElementById('in-nummer').value;
+            document.getElementById('out-datum').innerText = document.getElementById('in-datum').value;
+            document.getElementById('out-notitie').innerText = document.getElementById('in-notitie').value;
+
+            let sub = 0;
+            const tbody = document.getElementById('out-items');
+            tbody.innerHTML = '';
+            this.state.items.forEach(item => {
+                sub += item.price;
+                tbody.innerHTML += `<tr><td>${item.desc}</td><td style="text-align:right">€ ${item.price.toFixed(2)}</td></tr>`;
+            });
+
+            const perc = parseInt(document.getElementById('in-btw-perc').value);
+            const btw = sub * (perc/100);
+            const total = sub + btw;
+
+            document.getElementById('label-btw').innerText = `BTW (${perc}%)`;
+            document.getElementById('out-subtotaal').innerText = `€ ${sub.toFixed(2)}`;
+            document.getElementById('out-btw').innerText = `€ ${btw.toFixed(2)}`;
+            document.getElementById('out-totaal').innerText = `€ ${total.toFixed(2)}`;
+        },
+
+        async saveAndSend() {
+            const c = clients.find(cl => cl.id === activeClientId);
+            const element = document.getElementById('invoice-canvas');
+            const pdf = await html2pdf().from(element).output('datauristring');
+            
+            c.invoices.push({
+                id: Date.now(),
+                number: document.getElementById('in-nummer').value,
+                pdf: pdf,
+                total: document.getElementById('out-totaal').innerText,
+                date: document.getElementById('in-datum').value,
+                paid: false
+            });
+            save(); alert('Factuur verzonden naar portaal!'); showView('view-admin-dash');
+        }
+    };
+
+    function openInvoiceMaker(id) { InvoiceApp.open(id); }
+
+    // --- KLANT PORTAL ---
+    function doClientLogin() {
+        const u = document.getElementById('c-user').value;
+        const p = document.getElementById('c-pass').value;
+        const c = clients.find(cl => cl.user === u && cl.pass === p);
+        if(c) {
+            currentSession = {type:'client', clientId:c.id}; localStorage.setItem('anzelmo_session', JSON.stringify(currentSession));
+            activeClientId = c.id; renderClientPortal(); showView('view-client-dash');
+        } else alert('Fout');
+    }
+
+    function renderClientPortal() {
+        const c = clients.find(cl => cl.id === activeClientId);
+        document.getElementById('c-display-company').innerText = "Welkom " + c.company;
+        document.getElementById('c-progress-bar').style.width = c.progress + '%';
+        document.getElementById('c-progress-text').innerText = c.progress;
+        document.getElementById('c-status-msg').innerText = "Status: " + c.status;
+
+        const list = document.getElementById('c-invoice-list');
+        list.innerHTML = c.invoices.map(inv => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+                <span><b>${inv.number}</b><br><small>${inv.total}</small></span>
+                <div>
+                    ${inv.paid ? '<span style="color:green">Betaald</span>' : `<button class="btn btn-wero btn-sm" onclick="payWero(${inv.id})">Betaal met Wero</button>`}
+                    <a href="${inv.pdf}" download="Factuur.pdf" class="btn btn-outline btn-sm">PDF</a>
+                </div>
+            </div>
+        `).join('') || 'Geen facturen.';
+        renderMessages();
+    }
+
+    function payWero(id) {
+        alert('Wero betaling wordt gestart...');
+        clients.find(cl => cl.id === activeClientId).invoices.find(i=>i.id===id).paid=true;
+        save(); renderClientPortal();
+    }
+
+    function changePassword() {
+        const p = document.getElementById('new-pass').value;
+        clients.find(cl => cl.id === activeClientId).pass = p;
+        save(); alert('Gewijzigd');
+    }
+
+    // --- CHAT ---
+    function toggleChat() { 
+        document.getElementById('chat-popup').classList.toggle('active'); 
+        if(currentSession.type==='admin') { clients.find(c=>c.id===activeClientId).unreadByAdmin=false; save(); renderAdminTable(); }
+    }
+    function openAdminChat(id) { activeClientId=id; document.getElementById('chat-title').innerText = "Chat met " + clients.find(c=>c.id===id).company; renderMessages(); toggleChat(); }
+    function sendMessage() {
+        const i = document.getElementById('chat-input'); if(!i.value) return;
+        const c = clients.find(cl => cl.id === activeClientId);
+        c.messages.push({ role: currentSession.type, text: i.value });
+        if(currentSession.type==='client') c.unreadByAdmin=true;
+        save(); i.value=''; renderMessages(); if(currentSession.type==='admin') renderAdminTable();
+    }
+    function renderMessages() {
+        const c = clients.find(cl => cl.id === activeClientId);
+        const box = document.getElementById('chat-msgs');
+        box.innerHTML = c.messages.map(m => `<div class="msg ${m.role===currentSession.type?'msg-self':'msg-other'}">${m.text}</div>`).join('');
+        box.scrollTop = box.scrollHeight;
+    }
+</script>
+</body>
+</html>
