@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodemakerByAnzelmo | Pro Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --danger: #e11d48;
+            --success: #10b981;
+            --bg: #9c6db0;
+            --border: #233a4e;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; }
+        .hidden { display: none !important; }
+
+        nav { background: #E29CFF; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .logo { font-weight: 800; color: var(--primary); font-size: 1.25rem; cursor: pointer; }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: #F1EDF7; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+
+        .btn { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: #024557; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        input, textarea, select { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+
+        /* Generator Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; border-radius: 15px; padding: 2rem; position: relative; }
+
+        /* Preview area */
+        #invoice-preview, #contract-preview { background: white; padding: 40px; color: black; border: 1px solid #ddd; margin-top: 20px; font-size: 12pt; }
+
+        /* Chat */
+        #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1500; }
+        #chat-window { width: 320px; height: 400px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); flex-direction: column; display: none; }
+        .chat-body { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .bubble { padding: 8px; border-radius: 8px; max-width: 80%; font-size: 0.8rem; }
+        .bubble-admin { align-self: flex-end; background: var(--primary); color: white; }
+        .bubble-client { align-self: flex-start; background: #eee; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo" onclick="goHome()">CodemakerByAnzelmo</div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" onclick="goHome()"><i class="fas fa-home"></i> Home</button>
+        <button class="btn btn-danger hidden" id="logout-btn" onclick="logout()">Uitloggen</button>
+    </div>
+</nav>
+
+<!-- HOOFDSCHERM (Keuze of Dashboards) -->
+<div id="view-choice" class="container">
+    <div class="grid" style="max-width: 700px; margin: 10vh auto; text-align: center;">
+        <div class="card" style="cursor:pointer" onclick="showView('view-admin-login')">
+            <i class="fas fa-user-shield fa-3x" style="color:var(--primary)"></i><br><br><h2>Beheerder</h2>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="showView('view-client-login')">
+            <i class="fas fa-user-tie fa-3x" style="color:var(--primary)"></i><br><br><h2>Klant Login</h2>
+        </div>
+    </div>
+</div>
+
+<!-- LOGIN -->
+<div id="view-admin-login" class="container hidden">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h2>Admin Inlog</h2><br>
+        <input type="text" id="admin-user" placeholder="Gebruikersnaam">
+        <input type="password" id="admin-pass" placeholder="Wachtwoord">
+        <button class="btn btn-primary" style="width:100%" onclick="doAdminLogin()">Inloggen</button>
+    </div>
+</div>
+
+<div id="view-client-login" class="container hidden">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h2>Klant Inlog</h2><br>
+        <input type="text" id="c-user" placeholder="Inlognaam">
+        <input type="password" id="c-pass" placeholder="Wachtwoord">
+        <button class="btn btn-primary" style="width:100%" onclick="doClientLogin()">Inloggen</button>
+    </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="view-admin-dash" class="container hidden">
+    <div class="card">
+        <h2>Nieuwe Klant Aanmaken</h2>
+        <div class="grid">
+            <input type="text" id="f-company" placeholder="Bedrijfsnaam">
+            <input type="email" id="f-email" placeholder="E-mailadres">
+            <input type="text" id="f-user" placeholder="Gebruikersnaam">
+            <input type="text" id="f-pass" placeholder="Wachtwoord">
+        </div>
+        <button class="btn btn-primary" onclick="addClient()">Opslaan & E-mail Openen</button>
+    </div>
+
+    <div class="card">
+        <h2>Klanten Overzicht</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Bedrijf</th>
+                    <th>Voortgang</th>
+                    <th>Documenten Maken</th>
+                    <th>Chat</th>
+                </tr>
+            </thead>
+            <tbody id="admin-table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- KLANT DASHBOARD -->
+<div id="view-client-dash" class="container hidden">
+    <div class="card" style="text-align:center">
+        <h1 id="c-display-company">Welkom</h1>
+        <div style="background:#eee; border-radius:20px; height:20px; margin:20px 0; overflow:hidden">
+            <div id="c-progress-bar" style="background:var(--primary); height:100%; width:0%"></div>
+        </div>
+        <span id="c-status-text" class="status-tag">Status</span>
+    </div>
+    <div class="grid">
+        <div class="card"><h3>Facturen</h3><div id="c-invoice-list"></div></div>
+        <div class="card"><h3>Contracten</h3><div id="c-contract-list"></div></div>
+    </div>
+</div>
+
+<!-- FACTUUR MAKER MODAL -->
+<div id="modal-invoice" class="modal hidden">
+    <div class="modal-content">
+        <span style="float:right; cursor:pointer" onclick="closeModals()">X</span>
+        <h2>Nieuwe Factuur Maken</h2>
+        <div class="grid">
+            <div><label>Factuurnummer</label><input type="text" id="inv-num" value="2024-001"></div>
+            <div><label>Datum</label><input type="date" id="inv-date"></div>
+        </div>
+        <div id="inv-items">
+            <div class="grid" style="grid-template-columns: 3fr 1fr 1fr;">
+                <input type="text" placeholder="Omschrijving" class="item-desc">
+                <input type="number" placeholder="Prijs" class="item-price">
+                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+            </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="addInvRow()">+ Item toevoegen</button>
+        <hr style="margin:20px 0">
+        <button class="btn btn-success" onclick="previewInvoice()">Voorbeeld Genereren</button>
+        
+        <div id="invoice-preview" class="hidden">
+            <!-- Hier komt de PDF layout -->
+            <div id="invoice-to-print">
+                <h1 style="color:#2563eb">FACTUUR</h1>
+                <p><strong>CodemakerByAnzelmo</strong><br>KvK: 12345678 | BTW: NL001234567B01</p>
+                <hr>
+                <div style="display:flex; justify-content:space-between; margin: 20px 0;">
+                    <div><strong>Factuur naar:</strong><br><span id="pdf-inv-client"></span></div>
+                    <div><strong>Factuur #:</strong> <span id="pdf-inv-num"></span><br><strong>Datum:</strong> <span id="pdf-inv-date"></span></div>
+                </div>
+                <table style="width:100%; border:1px solid #ddd;">
+                    <thead style="background:#f9f9f9"><tr><th>Omschrijving</th><th>Bedrag</th></tr></thead>
+                    <tbody id="pdf-inv-rows"></tbody>
+                </table>
+                <div style="text-align:right; margin-top:20px;">
+                    <p>Subtotaal: €<span id="pdf-inv-sub"></span></p>
+                    <p>BTW (21%): €<span id="pdf-inv-btw"></span></p>
+                    <h3>Totaal: €<span id="pdf-inv-total"></span></h3>
+                </div>
+            </div>
+            <br>
+            <button class="btn btn-primary" onclick="saveDocToPortal('invoices')">Opslaan in Portal van Klant</button>
+        </div>
+    </div>
+</div>
+
+<!-- CHAT WIDGET -->
+<div id="chat-widget" class="hidden">
+    <div id="chat-window">
+        <div style="background:var(--primary); color:white; padding:10px; font-weight:bold; border-radius:12px 12px 0 0">Chat</div>
+        <div class="chat-body" id="chat-content"></div>
+        <div style="padding:10px; display:flex; gap:5px">
+            <input type="text" id="chat-input" placeholder="Bericht..." style="margin:0">
+            <button class="btn btn-primary" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="btn btn-primary" onclick="toggleChat()" style="border-radius:50px; padding:15px">💬 Chat</button>
+</div>
+
+<script>
+    let clients = JSON.parse(localStorage.getItem('anzelmo_db_v5')) || [];
+    let session = JSON.parse(localStorage.getItem('anzelmo_session')) || null;
+    let activeClientId = null;
+
+    window.onload = () => {
+        if(session) {
+            if(session.type === 'admin') { renderAdminTable(); showView('view-admin-dash'); }
+            else { renderClientPortal(); showView('view-client-dash'); }
+            document.getElementById('chat-widget').classList.remove('hidden');
+        } else {
+            showView('view-choice');
+        }
+    };
+
+    function showView(id) {
+        document.querySelectorAll('.container, #view-admin-login, #view-client-login').forEach(v => v.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('logout-btn').classList.toggle('hidden', id === 'view-choice');
+    }
+
+    function goHome() {
+        if(!session) window.location.href = "https://codemakerbyanzelmo.nl";
+        else session.type === 'admin' ? showView('view-admin-dash') : showView('view-client-dash');
+    }
+
+    function logout() { localStorage.removeItem('anzelmo_session'); window.location.href = "https://codemakerbyanzelmo.nl"; }
+
+    // ADMIN LOGICA
+    function addClient() {
+        const company = document.getElementById('f-company').value;
+        const email = document.getElementById('f-email').value;
+        const user = document.getElementById('f-user').value;
+        const pass = document.getElementById('f-pass').value;
+        if(!company || !user || !pass) return alert('Vul alles in');
+
+        const newClient = {
+            id: Date.now(), company, email, user, pass,
+            progress: 10, status: 'Opstart', invoices: [], contracts: [], messages: []
+        };
+        clients.push(newClient);
+        save(); renderAdminTable();
+        
+        // Mail versturen
+        const body = `Beste ${company},\n\nJe portal is klaar!\nInloggen: ${window.location.href}?mode=client\nUser: ${user}\nPass: ${pass}`;
+        window.location.href = `mailto:${email}?subject=Inloggegevens Portal&body=${encodeURIComponent(body)}`;
+    }
+
+    function renderAdminTable() {
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '';
+        clients.forEach(c => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${c.company}</strong></td>
+                    <td><input type="number" value="${c.progress}" onchange="updateVal(${c.id}, 'progress', this.value)" style="width:60px; margin:0"> %</td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="openInvoiceMaker(${c.id})">+ Factuur</button>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Contract maker werkt hetzelfde als de factuur maker (sjabloon aanpassen)')">+ Contract</button>
+                    </td>
+                    <td><button class="btn btn-primary btn-sm" onclick="startChat(${c.id})">💬</button></td>
+                </tr>`;
+        });
+    }
+
+    // FACTUUR MAKER LOGICA
+    function openInvoiceMaker(id) {
+        activeClientId = id;
+        const c = clients.find(cl => cl.id === id);
+        document.getElementById('pdf-inv-client').innerText = c.company;
+        document.getElementById('modal-invoice').classList.remove('hidden');
+    }
+
+    function addInvRow() {
+        const div = document.createElement('div');
+        div.className = 'grid';
+        div.style.gridTemplateColumns = '3fr 1fr 1fr';
+        div.innerHTML = `<input type="text" placeholder="Omschrijving" class="item-desc"><input type="number" placeholder="Prijs" class="item-price"><button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>`;
+        document.getElementById('inv-items').appendChild(div);
+    }
+
+    function previewInvoice() {
+        const descs = document.querySelectorAll('.item-desc');
+        const prices = document.querySelectorAll('.item-price');
+        let htmlRows = '';
+        let subtotal = 0;
+
+        descs.forEach((d, i) => {
+            const p = parseFloat(prices[i].value) || 0;
+            htmlRows += `<tr><td>${d.value}</td><td>€${p.toFixed(2)}</td></tr>`;
+            subtotal += p;
+        });
+
+        const btw = subtotal * 0.21;
+        const total = subtotal + btw;
+
+        document.getElementById('pdf-inv-num').innerText = document.getElementById('inv-num').value;
+        document.getElementById('pdf-inv-date').innerText = document.getElementById('inv-date').value;
+        document.getElementById('pdf-inv-rows').innerHTML = htmlRows;
+        document.getElementById('pdf-inv-sub').innerText = subtotal.toFixed(2);
+        document.getElementById('pdf-inv-btw').innerText = btw.toFixed(2);
+        document.getElementById('pdf-inv-total').innerText = total.toFixed(2);
+        
+        document.getElementById('invoice-preview').classList.remove('hidden');
+    }
+
+    function saveDocToPortal(type) {
+        const cIdx = clients.findIndex(cl => cl.id === activeClientId);
+        const docName = type === 'invoices' ? "Factuur " + document.getElementById('inv-num').value : "Contract";
+        
+        clients[cIdx][type].push({
+            name: docName,
+            date: new Date().toLocaleDateString(),
+            paid: false,
+            // In een echte app zou je hier een PDF URL opslaan. Nu slaan we de data op.
+            content: document.getElementById('invoice-to-print').innerHTML 
+        });
+
+        save();
+        alert('Opgeslagen in de portal van de klant!');
+        closeModals();
+    }
+
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
+
+    // KLANT LOGICA
+    function renderClientPortal() {
+        const c = clients.find(cl => cl.id === session.clientId);
+        document.getElementById('c-display-company').innerText = "Welkom " + c.company;
+        document.getElementById('c-progress-bar').style.width = c.progress + "%";
+        
+        const invList = document.getElementById('c-invoice-list');
+        invList.innerHTML = c.invoices.map(i => `<div class="card" style="display:flex; justify-content:space-between"><span>${i.name}</span><button class="btn btn-primary btn-sm" onclick="alert('PDF downloaden...')">Bekijken</button></div>`).join('') || 'Geen documenten';
+    }
+
+    // CHAT LOGICA
+    function toggleChat() { 
+        const win = document.getElementById('chat-window');
+        win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function startChat(id) {
+        activeClientId = id;
+        toggleChat();
+        renderMessages();
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        if(!input.value) return;
+        const id = session.type === 'admin' ? activeClientId : session.clientId;
+        const cIdx = clients.findIndex(cl => cl.id === id);
+        
+        clients[cIdx].messages.push({ sender: session.type, text: input.value });
+        input.value = '';
+        save(); renderMessages();
+    }
+
+    function renderMessages() {
+        const id = session.type === 'admin' ? activeClientId : session.clientId;
+        const c = clients.find(cl => cl.id === id);
+        document.getElementById('chat-content').innerHTML = c.messages.map(m => `<div class="bubble bubble-${m.sender}">${m.text}</div>`).join('');
+    }
+
+    // AUTH
+    function doAdminLogin() {
+        if(document.getElementById('admin-user').value === 'admin' && document.getElementById('admin-pass').value === 'remigio123') {
+            session = {type: 'admin'};
+            localStorage.setItem('anzelmo_session', JSON.stringify(session));
+            location.reload();
+        } else alert('Fout');
+    }
+
+    function doClientLogin() {
+        const u = document.getElementById('c-user').value;
+        const p = document.getElementById('c-pass').value;
+        const c = clients.find(cl => cl.user === u && cl.pass === p);
+        if(c) {
+            session = {type: 'client', clientId: c.id};
+            localStorage.setItem('anzelmo_session', JSON.stringify(session));
+            location.reload();
+        } else alert('Onjuist');
+    }
+
+    function updateVal(id, key, val) {
+        const i = clients.findIndex(c => c.id === id);
+        clients[i][key] = val;
+        save();
+    }
+
+    function save() { localStorage.setItem('anzelmo_db_v5', JSON.stringify(clients)); }
+</script>
+</body>
+</html>

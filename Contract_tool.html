@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Generator - CodemakerbyAnzelmo</title>
+    <!-- Google Fonts voor een professionele look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --success: #059669;
+            --bg-light: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #334155;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 40px;
+        }
+
+        /* --- FORMULIER STYLING --- */
+        .form-side {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .form-side h2 { 
+            margin-top: 0; 
+            font-size: 1.5rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-section { margin-bottom: 25px; }
+        .form-section-title { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #94a3b8; 
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--primary); }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-group { margin-top: 30px; display: grid; gap: 12px; }
+        
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn-print { background: var(--primary); color: white; }
+        .btn-email { background: var(--success); color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+
+        /* --- CONTRACT PREVIEW STYLING --- */
+        .contract-side {
+            background: white;
+            padding: 80px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.08);
+            min-height: 297mm; /* A4 Ratio */
+            border-radius: 4px;
+        }
+
+        /* Logo & Titel Integratie */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 50px;
+            gap: 15px;
+        }
+
+        .header-logo {
+            height: 50px; /* Hoogte aanpassen naar wens */
+            width: auto;
+            object-fit: contain;
+        }
+
+        .contract-title {
+            font-size: 26pt;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -1px;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .contract-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-top: -40px;
+            margin-bottom: 50px;
+        }
+
+        .meta-data {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 35px;
+            margin-bottom: 12px;
+            color: var(--primary);
+            border-left: 4px solid var(--accent);
+            padding-left: 15px;
+        }
+
+        .placeholder { 
+            color: var(--accent); 
+            font-weight: 600; 
+            background: rgba(37, 99, 235, 0.05);
+            padding: 0 4px;
+        }
+
+        .payment-info {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .wero-brand {
+            color: #5d2d91;
+            font-weight: 800;
+            font-style: italic;
+        }
+
+        /* Handtekeningen */
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .sig-box {
+            text-align: center;
+        }
+
+        .sig-box label {
+            margin-bottom: 10px;
+            display: block;
+            color: #64748b;
+        }
+
+        canvas {
+            border: 1px solid var(--border);
+            background: var(--bg-light);
+            width: 100%;
+            height: 150px;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        .clear-link {
+            font-size: 0.7rem;
+            color: #ef4444;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        /* --- PRINT REGELS --- */
+        @media print {
+            body { background: white; padding: 0; }
+            .form-side, .clear-link { display: none !important; }
+            .container { display: block; }
+            .contract-side { box-shadow: none; padding: 0; width: 100%; border: none; }
+            .placeholder { background: transparent; color: black; }
+        }
+
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+            .form-side { position: static; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- LINKER KANT: INPUT -->
+    <div class="form-side">
+        <h2>Contract Editor</h2>
+        
+        <div class="form-section">
+            <div class="form-section-title">Basis Informatie</div>
+            <div class="form-group">
+                <label>Kenmerk Nummer</label>
+                <input type="text" id="in_kenmerk" placeholder="bijv. 2025-001">
+            </div>
+            <div class="form-group">
+                <label>Datum Overeenkomst</label>
+                <input type="date" id="in_datum">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Klant Gegevens</div>
+            <div class="form-group">
+                <label>Naam Opdrachtgever</label>
+                <input type="text" id="in_klant_naam" placeholder="Bedrijfsnaam of Persoon">
+            </div>
+            <div class="form-group">
+                <label>Adres & Stad</label>
+                <input type="text" id="in_klant_adres" placeholder="Straatnaam 12, Stad">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Financieel</div>
+            <div class="form-group">
+                <label>Projectprijs (€)</label>
+                <input type="number" id="in_kosten_web" placeholder="1250">
+            </div>
+            <div class="form-group">
+                <label>Maandelijks Onderhoud (€)</label>
+                <input type="number" id="in_kosten_ond" placeholder="45">
+            </div>
+            <div class="form-group">
+                <label>Betalingstermijn (dagen)</label>
+                <input type="number" id="in_betaling" value="14">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-print" onclick="window.print()">Genereer PDF / Printen</button>
+            <button class="btn-email" id="emailBtn">E-mail naar Klant</button>
+        </div>
+    </div>
+
+    <!-- RECHTER KANT: CONTRACT PREVIEW -->
+    <div class="contract-side" id="contract-view">
+        
+        <div class="header-container">
+            <!-- Het logo fungeert als de 'D' of staat er vlak voor -->
+            <img src="logo-modified.png" alt="Logo" class="header-logo" onerror="this.src='https://via.placeholder.com/50x50?text=C'">
+            <h1 class="contract-title">Dienstverleningsovereenkomst</h1>
+        </div>
+        <div class="contract-subtitle">Webontwikkeling & Database Architectuur</div>
+
+        <div class="meta-data">
+            <div><strong>Kenmerk:</strong> <span id="out_kenmerk" class="placeholder">...</span></div>
+            <div><strong>Datum:</strong> <span id="out_datum" class="placeholder">...</span></div>
+        </div>
+
+        <div class="contract-body">
+            <div class="section-title">1. Partijomschrijving</div>
+            <p>De ondergetekenden:</p>
+            <p>1. <strong>CodemakerbyAnzelmo</strong>, gevestigd te [Uw Stad], hierna te noemen <strong>"Opdrachtnemer"</strong>.</p>
+            <p>2. <strong><span id="out_klant_naam" class="placeholder">[Naam Opdrachtgever]</span></strong>, gevestigd te <span id="out_klant_adres" class="placeholder">[Adres]</span>, hierna te noemen <strong>"Opdrachtgever"</strong>.</p>
+
+            <div class="section-title">2. Scope van Werkzaamheden</div>
+            <p>Opdrachtnemer verplicht zich tot het ontwerpen en realiseren van een op maat gemaakte webapplicatie, inclusief de benodigde database-koppelingen en beveiligingsprotocollen.</p>
+
+            <div class="section-title">3. Honorarium & Fasering</div>
+            <p>3.1. <strong>Conceptfase:</strong> Voor het opleveren van vijf unieke conceptontwerpen wordt een vast bedrag van <strong>€ 100,00</strong> in rekening gebracht.</p>
+            <p>3.2. <strong>Realisatie:</strong> De totale projectkosten bedragen <strong>€ <span id="out_kosten_web" class="placeholder">0,00</span></strong> excl. BTW.</p>
+            <p>3.3. <strong>Onderhoud:</strong> Voor hosting en technisch onderhoud wordt maandelijks <strong>€ <span id="out_kosten_ond" class="placeholder">0,00</span></strong> gefactureerd.</p>
+
+            <div class="section-title">4. Intellectueel Eigendom</div>
+            <p>Alle broncode, grafische elementen en databasestructuren ontwikkeld door Opdrachtnemer blijven intellectueel eigendom van <strong>CodemakerbyAnzelmo.nl</strong>, tenzij schriftelijk anders overeengekomen.</p>
+
+            <div class="section-title">5. Betalingscondities</div>
+            <div class="payment-info">
+                Facturatie geschiedt met een betalingstermijn van <strong><span id="out_betaling">14</span> dagen</strong>.
+                Betalingen kunnen worden voldaan via bankoverschrijving of de <span class="wero-brand">wero</span> app.<br><br>
+                <strong>IBAN:</strong> NL70 SNSB 0944 9275 99<br>
+                <strong>T.n.v.:</strong> Busby A.R.<br>
+                <strong>Omschrijving:</strong> Factuur <span id="out_kenmerk_pay">...</span>
+            </div>
+
+            <div class="signature-grid">
+                <div class="sig-box">
+                    <label>Opdrachtnemer</label>
+                    <canvas id="sig-1"></canvas>
+                    <span class="clear-link" onclick="clearCanvas('sig-1')">Handtekening wissen</span>
+                </div>
+                <div class="sig-box">
+                    <label>Opdrachtgever</label>
+                    <canvas id="sig-2"></canvas>
+                    <span class="clear-link" onclick="clearCanvas('sig-2')">Handtekening wissen</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuraties & Mapping
+    const inputs = {
+        'in_kenmerk': ['out_kenmerk', 'out_kenmerk_pay'],
+        'in_datum': ['out_datum'],
+        'in_klant_naam': ['out_klant_naam'],
+        'in_klant_adres': ['out_klant_adres'],
+        'in_kosten_web': ['out_kosten_web'],
+        'in_kosten_ond': ['out_kosten_ond'],
+        'in_betaling': ['out_betaling']
+    };
+
+    // Luister naar alle inputs (Live Update)
+    Object.keys(inputs).forEach(id => {
+        document.getElementById(id).addEventListener('input', function() {
+            const value = this.value;
+            inputs[id].forEach(targetId => {
+                const el = document.getElementById(targetId);
+                el.innerText = value || '...';
+                value ? el.classList.remove('placeholder') : el.classList.add('placeholder');
+            });
+        });
+    });
+
+    // Handtekening Functionaliteit
+    function initCanvas(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // Schaal canvas voor hogere resolutie
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.touches[0].clientX) - rect.left,
+                y: (e.clientY || e.touches[0].clientY) - rect.top
+            };
+        }
+
+        function start(e) {
+            drawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            if(e.type === 'touchstart') e.preventDefault();
+        }
+
+        function move(e) {
+            if (!drawing) return;
+            const pos = getPos(e);
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stop() { drawing = false; }
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', stop);
+
+        canvas.addEventListener('touchstart', start, {passive: false});
+        canvas.addEventListener('touchmove', move, {passive: false});
+        canvas.addEventListener('touchend', stop);
+    }
+
+    function clearCanvas(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Email Logica
+    document.getElementById('emailBtn').addEventListener('click', () => {
+        const klant = document.getElementById('in_klant_naam').value || "Klant";
+        const kenmerk = document.getElementById('in_kenmerk').value;
+        const subject = encodeURIComponent(`Overeenkomst CodemakerbyAnzelmo - ${kenmerk}`);
+        const body = encodeURIComponent(`Beste ${klant},\n\nHierbij ontvangt u de dienstverleningsovereenkomst met kenmerk ${kenmerk}.\n\nMet vriendelijke groet,\nAnzelmo`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    });
+
+    // Start de canvas pads
+    initCanvas('sig-1');
+    initCanvas('sig-2');
+</script>
+
+</body>
+</html>

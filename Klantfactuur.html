@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factuur Systeem - CodemakerByAnzelmo</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --wero-blue: #004595;
+            --bg-color: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1300px;
+            margin: auto;
+        }
+
+        /* Editor aan de linkerkant */
+        .editor-panel {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 20px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        /* Factuur aan de rechterkant */
+        .invoice-preview {
+            flex: 1.5;
+            background: white;
+            padding: 50px;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 1000px;
+        }
+
+        h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 0; }
+        .section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: #666; }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .item-row { display: flex; gap: 10px; margin-bottom: 8px; }
+
+        button {
+            cursor: pointer;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-add { background: #eee; color: #333; width: 100%; margin-bottom: 20px; }
+        .btn-print { background: #2980b9; color: white; flex: 1; }
+        .btn-send { background: #8e44ad; color: white; flex: 1; }
+        .actions { display: flex; gap: 10px; }
+
+        /* Factuur Layout */
+        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+        #logo-img { max-width: 200px; height: auto; }
+        .inv-details { text-align: right; }
+        .inv-details h1 { margin: 0; color: var(--primary-color); font-size: 2.5em; }
+
+        .address-box { margin-bottom: 30px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; background: #f9f9f9; padding: 12px; border-bottom: 2px solid var(--primary-color); }
+        td { padding: 12px; border-bottom: 1px solid #f1f1f1; }
+        .text-right { text-align: right; }
+
+        .totals-area { margin-left: auto; width: 300px; margin-top: 30px; }
+        .grand-total { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px; 
+            background: var(--primary-color); 
+            color: white;
+            font-size: 1.3em;
+            border-radius: 4px;
+        }
+
+        /* Betaal sectie met QR */
+        .payment-container {
+            margin-top: 50px;
+            display: flex;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .qr-code-box {
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .qr-code-box img { width: 120px; height: 120px; display: block; }
+        .qr-code-box span { font-size: 0.7em; color: #999; margin-top: 5px; display: block; }
+
+        .payment-text { flex: 1; }
+        .wero-badge {
+            background: var(--wero-blue);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .footer-note { margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+
+        @media print {
+            .editor-panel { display: none; }
+            body { background: white; padding: 0; }
+            .container { display: block; }
+            .invoice-preview { box-shadow: none; width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- EDITOR -->
+    <div class="editor-panel">
+        <h2>Factuur Maken</h2>
+        
+        <div class="section">
+            <label>E-mailadres klant (voor verzending)</label>
+            <input type="email" id="clientEmail" placeholder="klant@voorbeeld.nl">
+            
+            <label>Klantnaam & Adres</label>
+            <input type="text" id="clientName" placeholder="Naam klant" oninput="updateInvoice()">
+            <input type="text" id="clientAddress" placeholder="Adres, Postcode, Plaats" oninput="updateInvoice()">
+        </div>
+
+        <div class="section">
+            <label>Factuurnummer</label>
+            <input type="text" id="invNumber" value="2026-001" oninput="updateInvoice()">
+            <label>Datum</label>
+            <input type="date" id="invDate" oninput="updateInvoice()">
+        </div>
+
+        <div class="section" id="itemsList">
+            <label>Artikelen</label>
+            <div class="item-row">
+                <input type="text" class="itemDesc" placeholder="Omschrijving" oninput="updateInvoice()">
+                <input type="number" class="itemPrice" placeholder="0.00" step="0.01" oninput="updateInvoice()">
+            </div>
+        </div>
+        <button class="btn-add" onclick="addItem()">+ Rij toevoegen</button>
+
+        <div class="actions">
+            <button class="btn-print" onclick="window.print()">Opslaan als PDF</button>
+            <button class="btn-send" onclick="sendEmail()">📧 Verstuur E-mail</button>
+        </div>
+    </div>
+
+    <!-- FACTUUR PREVIEW -->
+    <div class="invoice-preview" id="preview">
+        <div class="invoice-header">
+            <div class="logo-area">
+                <!-- VAST LOGO -->
+                <img id="logo-img" src="logo-modified.png" alt="CodemakerByAnzelmo" onerror="this.src='https://via.placeholder.com/200x60?text=CodemakerByAnzelmo'">
+                <div style="margin-top: 10px; line-height: 1.4;">
+                    <strong>CodemakerByAnzelmo.nl</strong><br>
+                     A.R.Busby<br>
+                    Adres: Sint janstraat 55, 6431 ND Hoensbroek<br>
+                    E-mail: info@codemakerbyanzelmo.nl
+                </div>
+            </div>
+            <div class="inv-details">
+                <h1>FACTUUR</h1>
+                <p><strong>Nummer:</strong> <span id="view-invNumber">2026-001</span></p>
+                <p><strong>Datum:</strong> <span id="view-invDate">--/--/----</span></p>
+            </div>
+        </div>
+
+        <div class="address-box">
+            <label>Gefactureerd aan:</label>
+            <strong id="view-clientName" style="font-size: 1.1em;">Klantnaam</strong><br>
+            <span id="view-clientAddress">Adresgegevens</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Omschrijving</th>
+                    <th class="text-right">Bedrag</th>
+                </tr>
+            </thead>
+            <tbody id="view-items"></tbody>
+        </table>
+
+        <div class="totals-area">
+            <div class="grand-total">
+                <span>TOTAAL</span>
+                <span id="view-total">€ 0.00</span>
+            </div>
+            <p style="text-align: right; font-size: 0.8em; color: #777; margin-top: 5px;">Vrijgesteld van BTW</p>
+        </div>
+
+        <!-- BETAAL SECTIE MET QR -->
+        <div class="payment-container">
+            <div class="qr-code-box">
+                <img id="qr-image" src="" alt="Betaal QR-code">
+                <span>Scan om te betalen</span>
+            </div>
+            <div class="payment-text">
+                <div class="wero-badge">wero</div>
+                <p style="margin: 0; font-size: 0.95em;">Betaal veilig via <strong>Wero</strong> of bankoverschrijving:</p>
+                <p style="margin: 5px 0; font-size: 0.9em; line-height: 1.5;">
+                    <strong>IBAN:</strong> NL70 SNSB 0944927599<br>
+                    <strong>T.n.v.:</strong> Busby A.R.<br>
+                    <strong>Omschrijving:</strong> Factuur <span id="view-invNumberPay">2026-001</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            <p>Vragen over deze factuur? Mail naar <strong>info@codemakerbyanzelmo.nl</strong></p>
+            <h3>BEDANKT VOOR UW BESTELLING!</h3>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addItem() {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+            <input type="text" class="itemDesc" placeholder="Omschrijving" oninput="updateInvoice()">
+            <input type="number" class="itemPrice" placeholder="0.00" step="0.01" oninput="updateInvoice()">
+        `;
+        document.getElementById('itemsList').appendChild(div);
+    }
+
+    function updateInvoice() {
+        const invNo = document.getElementById('invNumber').value;
+        document.getElementById('view-invNumber').innerText = invNo;
+        document.getElementById('view-invNumberPay').innerText = invNo;
+        document.getElementById('view-invDate').innerText = document.getElementById('invDate').value;
+        document.getElementById('view-clientName').innerText = document.getElementById('clientName').value || "Klantnaam";
+        document.getElementById('view-clientAddress').innerText = document.getElementById('clientAddress').value || "Adresgegevens";
+
+        const descs = document.querySelectorAll('.itemDesc');
+        const prices = document.querySelectorAll('.itemPrice');
+        const tbody = document.getElementById('view-items');
+        tbody.innerHTML = '';
+        
+        let total = 0;
+        descs.forEach((d, i) => {
+            const p = parseFloat(prices[i].value) || 0;
+            if (d.value || p > 0) {
+                total += p;
+                tbody.innerHTML += `<tr><td>${d.value}</td><td class="text-right">€ ${p.toFixed(2)}</td></tr>`;
+            }
+        });
+
+        const formattedTotal = total.toFixed(2);
+        document.getElementById('view-total').innerText = `€ ${formattedTotal}`;
+
+        // QR CODE GENERATIE (SEPA Standaard)
+        // Formaat: BCD (SEPA Credit Transfer)
+        const name = "Busby A.R.";
+        const iban = "NL70SNSB0944927599";
+        const qrContent = `BCD\n001\n1\nSCT\n\n${name}\n${iban}\nEUR${formattedTotal}\n\nFactuur ${invNo}`;
+        
+        // Gebruik een publieke API om de QR code te tonen
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrContent)}`;
+        document.getElementById('qr-image').src = qrUrl;
+    }
+
+    function sendEmail() {
+        const clientEmail = document.getElementById('clientEmail').value;
+        const invNo = document.getElementById('invNumber').value;
+        const total = document.getElementById('view-total').innerText;
+
+        if (!clientEmail) {
+            alert("Vul a.u.b. het e-mailadres van de klant in.");
+            return;
+        }
+
+        const subject = encodeURIComponent(`Factuur ${invNo} - CodemakerByAnzelmo.nl`);
+        const body = encodeURIComponent(`Beste ${document.getElementById('clientName').value},\n\nHierbij ontvangt u factuur ${invNo}.\n\nTotaalbedrag: ${total}\n\nU kunt de factuur betalen via de QR-code op de bijgevoegde PDF of via bankoverschrijving naar IBAN NL70 SNSB 0944927599 (t.n.v. Busby A.R.).\n\nMet vriendelijke groet,\n\nCodemakerByAnzelmo.nl`);
+
+        window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`;
+    }
+
+    window.onload = () => {
+        document.getElementById('invDate').valueAsDate = new Date();
+        updateInvoice();
+    };
+</script>
+
+</body>
+</html>
